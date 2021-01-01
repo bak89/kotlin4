@@ -28,6 +28,8 @@ class BitcoinApp : App(MainView::class) {
 }
 
 class MainView : View("Bitcoin Viewer") {
+
+
     private var bitcoin = Bitcoin(Currency.USD)
     private var bitcoinInfo: Task<BitcoinInfo>? = null
     private var bitcoinPrice: Label by singleAssign()
