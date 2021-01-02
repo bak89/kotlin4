@@ -1,3 +1,4 @@
+import com.sun.tools.javac.Main
 import javafx.collections.FXCollections.observableArrayList
 import javafx.concurrent.Task
 import javafx.geometry.Pos
@@ -12,6 +13,7 @@ import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import javafx.stage.Stage
+import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -30,8 +32,9 @@ class BitcoinApp : App(MainView::class) {
 
 class MainView : View("Bitcoin Viewer") {
 
-    private var bitcoin = Bitcoin(Currency.USD)
-    private var bitcoinInfo: Task<BitcoinInfo>? = null
+    //private var bitcoin = Bitcoin(Currency.USD)
+    //private var bitcoinInfo: Task<BitcoinInfo>? = null
+    private var price by singleAssign<Price>()
     private var bitcoinPrice: Label by singleAssign()
     private var currencyLabel: Label by singleAssign()
     private var dateUpdate: Label by singleAssign()
@@ -43,14 +46,14 @@ class MainView : View("Bitcoin Viewer") {
     var area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {}
 
     //var bitcoinProperty = BitcoinProperty(getTime(), bitcoin.currency, getRate(bitcoin.currency))
-    private var history = ArrayList<BitcoinInfo>().asObservable()
+    //private var history = ArrayList<BitcoinInfo>().asObservable()
     private var table = ArrayList<String>().asObservable()
 
 
     private val data = observableArrayList(
         //arrayOf(history[0].updated, history[0].prices),
         //arrayOf("BBB", "222"),
-        arrayOf("", "")
+        arrayOf("", "", "")
     )
 
 
@@ -102,24 +105,19 @@ class MainView : View("Bitcoin Viewer") {
                         button("USD") {
                             prefWidth = 70.0
                             action {
-                                //setCurrency(Currency.USD)
-                                // println(getTime())
-                                // println(getRate(Currency.USD))
-                                /*runBlocking {
-                                    async { update(Currency.USD) }
-                                }*/
+                                setCurrency(Currency.USD)
                             }
                         }
                         button("GBP") {
                             prefWidth = 70.0
                             action {
-                                //setCurrency(Currency.GBP)
+                                setCurrency(Currency.GBP)
                             }
                         }
                         button("EUR") {
                             prefWidth = 70.0
                             action {
-                                //setCurrency(Currency.EUR)
+                                setCurrency(Currency.EUR)
                             }
                         }
                     }
@@ -127,19 +125,19 @@ class MainView : View("Bitcoin Viewer") {
                         button("CHF") {
                             prefWidth = 70.0
                             action {
-                                //setCurrency(Currency.CHF)
+                                setCurrency(Currency.CHF)
                             }
                         }
                         button("JPY") {
                             prefWidth = 70.0
                             action {
-                                //setCurrency(Currency.JPY)
+                                setCurrency(Currency.JPY)
                             }
                         }
                         button("CNY") {
                             prefWidth = 70.0
                             action {
-                                //setCurrency(Currency.CNY)
+                                setCurrency(Currency.CNY)
                             }
                         }
                     }
@@ -150,7 +148,7 @@ class MainView : View("Bitcoin Viewer") {
                     }
                     area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {
                         series("USD") {
-                            data(dataGraph, 26785.105)
+                            data("13.31", 26785.105)
                             data("13:32", 26788.2)
                             data("13:33", 26790.3)
 
@@ -177,35 +175,35 @@ class MainView : View("Bitcoin Viewer") {
                         font = Font.font("Dialog", FontWeight.NORMAL, 18.0)
                     }
                     //tblItems =tableview(data) {
-                    /* tableview(data) {
-                         column("Time", String::class) {
-                             value { it.value[0] }
-                         }
-                         column("Currency 1", String::class) {
-                             value { it.value[1] }
-                         }
-                         /*column("Currency 2", String::class) {
-                             value { it.value}
-                         }
-                         column("Currency 3", String::class) {
-                             value { it.value }
-                         }*/
-                         // column("Time", bitcoinProperty::time)
-                         //column("Time", BitcoinInfo::updated)
-                         //column("Time", Number::updated)
-                         //column("Currency 1", Number::)
-                         //column("Currency 2", Item::price)
-                         //  column("Currency 3", Item::taxable)
+                    tableview(data) {
+                        column("Time", String::class) {
+                            value { it.value[0] }
+                        }
+                        column("value", String::class) {
+                            value { it.value[1] }
+                        }
+                        column("Currency", String::class) {
+                            value { it.value[2] }
+                        }
+                        /*column("Currency 3", String::class) {
+                            value { it.value }
+                        }*/
+                        /* column("Time", bitcoinProperty::time)
+                        column("Time", BitcoinInfo::updated)
+                        column("Time", Number::updated)
+                        column("Currency 1", Number::)
+                        column("Currency 2", Item::price)
+                          column("Currency 3", Item::taxable)*/
 
-                         prefWidth = 667.0
-                         prefHeight = 200.0
+                        prefWidth = 667.0
+                        prefHeight = 200.0
 
-                         columnResizePolicy = CONSTRAINED_RESIZE_POLICY
+                        columnResizePolicy = CONSTRAINED_RESIZE_POLICY
 
-                         vboxConstraints {
-                             vGrow = Priority.ALWAYS
-                         }
-                     }*/
+                        vboxConstraints {
+                            vGrow = Priority.ALWAYS
+                        }
+                    }
                     hbox(spacing = 10.0, alignment = Pos.CENTER_LEFT) {
                         label("Export history as text file:") {
                             font = Font.font("Dialog", FontWeight.NORMAL, 16.0)
@@ -232,7 +230,46 @@ class MainView : View("Bitcoin Viewer") {
         }
     }
 
+    private fun setCurrency(currency: Currency) {
 
+/*        MainScope().launch {
+            val one = withContext(Dispatchers.Main) { fetchPrice(currency) }
+        }*/
+        /* val job = CoroutineScope(Dispatchers.Main).launch {
+             while (true) {
+                 delay(5000)
+                 val curr = fetchPrice(currency)
+                 bitcoinPrice.text = curr.value.toString()
+                 dateUpdate.text = curr.time.toString()
+                 currencyLabel.text = currency.toString()
+                 status.text = "Updated."
+                 status.textFill = Color.DARKGREEN
+                 //add to array?
+                 val uno = arrayOf(curr)
+                 println("${uno[0].time}, ${uno[0].value}")
+                 data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
+
+             }
+         }
+
+         job.cancel()*/
+
+        runBlocking {
+            status.text = "Updating..."
+            status.textFill = Color.ORANGE
+            val curr = fetchPrice(currency)
+            bitcoinPrice.text = curr.value.toString()
+            dateUpdate.text = curr.time.toString()
+            currencyLabel.text = currency.toString()
+            status.text = "Updated."
+            status.textFill = Color.DARKGREEN
+            //add to array?
+            val uno = arrayOf(curr)
+            println("${uno[0].time}, ${uno[0].value}")
+            data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
+            dataGraph = uno[0].time.toString()
+        }
+    }
 /*
     private fun writeToFile() {
         val fileName = "myHistory.txt"

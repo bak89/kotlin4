@@ -1,4 +1,4 @@
-import kotlinx.serialization.*
+/*import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import kotlinx.serialization.encoding.*
 import kotlinx.serialization.descriptors.*
@@ -16,7 +16,7 @@ object IsoDateSerializer : KSerializer<LocalDateTime> {
     override fun deserialize(decoder: Decoder): LocalDateTime = LocalDateTime.parse(decoder.decodeString(), formatter)
 }
 
-enum class Currency { BTC, CHF, CNY, EUR, EGP, GBP, JPY, USD }
+//enum class Currency { BTC, CHF, CNY, EUR, EGP, GBP, JPY, USD }
 
 @Serializable
 data class BitcoinInfo(val updated: String, val prices: MutableMap<Currency, Float>)
@@ -97,3 +97,5 @@ fun main() {
     println(Json.encodeToString(listOf(bitcoinTest.getCurrent3Price(), bitcoinTest.getCurrent2Price())))
 
 }
+
+ */

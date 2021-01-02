@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.*
 import java.net.URL
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.util.*
 
 val MAPPER: ObjectMapper = ObjectMapper()
@@ -17,13 +18,13 @@ val MAPPER: ObjectMapper = ObjectMapper()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
 
-//enum class Currency { BTC, CHF, CNY, EUR, EGP, GBP, JPY, USD }
+enum class Currency { BTC, CHF, CNY, EUR, EGP, GBP, JPY, USD }
 
-data class Price constructor(val time: LocalDateTime, val value: Double)
+data class Price constructor(val time: ZonedDateTime, val value: Float)
 /*data class Price(val time: String, val value: Double)
 data class Price(val value: Double)*/
 
-suspend fun fetchPrice(currency: Currency): Price {
+suspend fun fetchPrice(currency: Currency): Price = withContext(Dispatchers.IO) {
     val url = "https://api.coindesk.com/v1/bpi/currentprice/$currency.json"
     val text = runInterruptible {
         URL(url).readText()
@@ -31,14 +32,14 @@ suspend fun fetchPrice(currency: Currency): Price {
 
     data class Time(
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:00XXX")
-        val updatedISO: LocalDateTime,
+        val updatedISO: ZonedDateTime
         //@JsonProperty("updated")
         //val updated: String
     )
 
     data class Bpi(
         @JsonAlias("rate_float")
-        val rateFloat: Double
+        val rateFloat: Float
     )
 
     data class Data(
@@ -49,13 +50,20 @@ suspend fun fetchPrice(currency: Currency): Price {
 
     val data = MAPPER.readValue<Data>(text)
 
-    return Price(data.time.updatedISO, data.bpi[currency]!!.rateFloat)
+    return@withContext Price(data.time.updatedISO, data.bpi[currency]!!.rateFloat)
     //return Price(data.time.updated, data.bpi[currency]!!.rateFloat)
     //return Price(data.bpi[currency]!!.rateFloat)
 }
 
 fun main() {
     runBlocking {
-        async { fetchPrice(Currency.USD) }
+        val gpb = fetchPrice(Currency.GBP)
+        val eur = fetchPrice(Currency.EUR)
+        val usd = fetchPrice(Currency.USD)
+        println(eur)
+        println(usd)
     }
+
+
+
 }
