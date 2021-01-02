@@ -13,7 +13,8 @@ import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import javafx.stage.Stage
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+
 
 import tornadofx.*
 import java.io.File
@@ -29,7 +30,6 @@ class BitcoinApp : App(MainView::class) {
 
 class MainView : View("Bitcoin Viewer") {
 
-
     private var bitcoin = Bitcoin(Currency.USD)
     private var bitcoinInfo: Task<BitcoinInfo>? = null
     private var bitcoinPrice: Label by singleAssign()
@@ -37,12 +37,12 @@ class MainView : View("Bitcoin Viewer") {
     private var dateUpdate: Label by singleAssign()
     private var status: Label by singleAssign()
 
-    //var tblItems: TableView<String> by singleAssign()
+    var tblItems: TableView<String> by singleAssign()
     var export: Button by singleAssign()
     var dataGraph: String? = ""
     var area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {}
 
-    //    var bitcoinProperty = BitcoinProperty(getTime(),bitcoin.currency,getRate(bitcoin.currency))
+    //var bitcoinProperty = BitcoinProperty(getTime(), bitcoin.currency, getRate(bitcoin.currency))
     private var history = ArrayList<BitcoinInfo>().asObservable()
     private var table = ArrayList<String>().asObservable()
 
@@ -102,21 +102,24 @@ class MainView : View("Bitcoin Viewer") {
                         button("USD") {
                             prefWidth = 70.0
                             action {
-                                setCurrency(Currency.USD)
+                                //setCurrency(Currency.USD)
                                 // println(getTime())
                                 // println(getRate(Currency.USD))
+                                /*runBlocking {
+                                    async { update(Currency.USD) }
+                                }*/
                             }
                         }
                         button("GBP") {
                             prefWidth = 70.0
                             action {
-                                setCurrency(Currency.GBP)
+                                //setCurrency(Currency.GBP)
                             }
                         }
                         button("EUR") {
                             prefWidth = 70.0
                             action {
-                                setCurrency(Currency.EUR)
+                                //setCurrency(Currency.EUR)
                             }
                         }
                     }
@@ -124,19 +127,19 @@ class MainView : View("Bitcoin Viewer") {
                         button("CHF") {
                             prefWidth = 70.0
                             action {
-                                setCurrency(Currency.CHF)
+                                //setCurrency(Currency.CHF)
                             }
                         }
                         button("JPY") {
                             prefWidth = 70.0
                             action {
-                                setCurrency(Currency.JPY)
+                                //setCurrency(Currency.JPY)
                             }
                         }
                         button("CNY") {
                             prefWidth = 70.0
                             action {
-                                setCurrency(Currency.CNY)
+                                //setCurrency(Currency.CNY)
                             }
                         }
                     }
@@ -174,35 +177,35 @@ class MainView : View("Bitcoin Viewer") {
                         font = Font.font("Dialog", FontWeight.NORMAL, 18.0)
                     }
                     //tblItems =tableview(data) {
-                    tableview(data) {
-                        column("Time", String::class) {
-                            value { it.value[0] }
-                        }
-                        column("Currency 1", String::class) {
-                            value { it.value[1] }
-                        }/*
-                        column("Currency 2", String::class) {
-                            value { it.value}
-                        }
-                        column("Currency 3", String::class) {
-                            value { it.value }
-                        }*/
-                        // column("Time", bitcoinProperty::time)
-                        //column("Time", BitcoinInfo::updated)
-                        //column("Time", Number::updated)
-                        //column("Currency 1", Number::)
-                        //column("Currency 2", Item::price)
-                        //  column("Currency 3", Item::taxable)
+                    /* tableview(data) {
+                         column("Time", String::class) {
+                             value { it.value[0] }
+                         }
+                         column("Currency 1", String::class) {
+                             value { it.value[1] }
+                         }
+                         /*column("Currency 2", String::class) {
+                             value { it.value}
+                         }
+                         column("Currency 3", String::class) {
+                             value { it.value }
+                         }*/
+                         // column("Time", bitcoinProperty::time)
+                         //column("Time", BitcoinInfo::updated)
+                         //column("Time", Number::updated)
+                         //column("Currency 1", Number::)
+                         //column("Currency 2", Item::price)
+                         //  column("Currency 3", Item::taxable)
 
-                        prefWidth = 667.0
-                        prefHeight = 200.0
+                         prefWidth = 667.0
+                         prefHeight = 200.0
 
-                        columnResizePolicy = CONSTRAINED_RESIZE_POLICY
+                         columnResizePolicy = CONSTRAINED_RESIZE_POLICY
 
-                        vboxConstraints {
-                            vGrow = Priority.ALWAYS
-                        }
-                    }
+                         vboxConstraints {
+                             vGrow = Priority.ALWAYS
+                         }
+                     }*/
                     hbox(spacing = 10.0, alignment = Pos.CENTER_LEFT) {
                         label("Export history as text file:") {
                             font = Font.font("Dialog", FontWeight.NORMAL, 16.0)
@@ -211,7 +214,7 @@ class MainView : View("Bitcoin Viewer") {
                             prefWidth = 70.0
                             action {
                                 try {
-                                    writeToFile()
+                                    //writeToFile()
                                     status.text = "Successfully exported"
                                     status.textFill = Color.DARKGREEN
                                 } catch (e: Exception) {
@@ -229,6 +232,8 @@ class MainView : View("Bitcoin Viewer") {
         }
     }
 
+
+/*
     private fun writeToFile() {
         val fileName = "myHistory.txt"
         val myfile = File(fileName)
@@ -307,6 +312,8 @@ class MainView : View("Bitcoin Viewer") {
 
 
     }
+
+ */
 }
 
 fun main(args: Array<String>) {
