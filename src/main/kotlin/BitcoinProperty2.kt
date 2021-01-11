@@ -1,4 +1,4 @@
-import com.fasterxml.jackson.annotation.JsonAlias
+/*import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -51,4 +51,4 @@ fun main() {
         println(eur)
         println(usd)
     }
-}
+}*/

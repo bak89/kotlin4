@@ -1,4 +1,4 @@
-/*import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -21,8 +21,7 @@ val MAPPER: ObjectMapper = ObjectMapper()
 enum class Currency { BTC, CHF, CNY, EUR, EGP, GBP, JPY, USD }
 
 data class Price constructor(val time: ZonedDateTime, val value: Float)
-/*data class Price(val time: String, val value: Double)
-data class Price(val value: Double)*/
+
 
 suspend fun fetchPrice(currency: Currency): Price = withContext(Dispatchers.IO) {
     val url = "https://api.coindesk.com/v1/bpi/currentprice/$currency.json"
@@ -33,8 +32,6 @@ suspend fun fetchPrice(currency: Currency): Price = withContext(Dispatchers.IO) 
     data class Time(
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:00XXX")
         val updatedISO: ZonedDateTime
-        //@JsonProperty("updated")
-        //val updated: String
     )
 
     data class Bpi(
@@ -44,26 +41,19 @@ suspend fun fetchPrice(currency: Currency): Price = withContext(Dispatchers.IO) 
 
     data class Data(
         val time: Time,
-        //@JsonProperty("bpi")
         val bpi: EnumMap<Currency, Bpi>
     )
 
     val data = MAPPER.readValue<Data>(text)
 
     return@withContext Price(data.time.updatedISO, data.bpi[currency]!!.rateFloat)
-    //return Price(data.time.updated, data.bpi[currency]!!.rateFloat)
-    //return Price(data.bpi[currency]!!.rateFloat)
 }
 
 fun main() {
     runBlocking {
-        val gpb = fetchPrice(Currency.GBP)
         val eur = fetchPrice(Currency.EUR)
         val usd = fetchPrice(Currency.USD)
         println(eur)
         println(usd)
     }
-
-
-
-}*/
+}

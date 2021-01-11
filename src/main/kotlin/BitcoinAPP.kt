@@ -23,6 +23,14 @@ import javafx.beans.property.IntegerProperty
 import javafx.collections.ObservableList
 import javafx.scene.chart.XYChart
 import java.io.FileWriter
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.*
+import java.time.LocalTime
+
+import java.time.LocalDate
 
 
 class BitcoinApp : App(MainView::class) {
@@ -43,25 +51,16 @@ class MainView : View("Bitcoin Viewer") {
     private var dateUpdate: Label by singleAssign()
     private var status: Label by singleAssign()
 
-
-    var export: Button by singleAssign()
-    var dataGraph: String? = ""
-    var area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {}
-
-    /*var bitcoinProperty = BitcoinProperty(getTime(), bitcoin.currency, getRate(bitcoin.currency))
-    //private var history = ArrayList<BitcoinInfo>().asObservable()
-    //private var history = ArrayList<String>()
-    var tblItems: TableView<String> by singleAssign()*/
+    private var export: Button by singleAssign()
+    private var valueChart: Float = 1.0F
+    private var dataChart = XYChart.Data("Currency", valueChart)
+    private var area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {}
 
     private val data: ObservableList<Array<String>> = observableArrayList(
         arrayOf("", "", "")
     )
 
-    var first: IntegerProperty = SimpleIntegerProperty(1000)
-    var second: Float = 1.0F
-
-
-    private var dataChart = XYChart.Data("Currency", second)
+    //var first: IntegerProperty = SimpleIntegerProperty(1000)
 
 
     override val root = borderpane {
@@ -241,52 +240,65 @@ class MainView : View("Bitcoin Viewer") {
             println(one.time)
         }*/
         //2.2 variante
-           val job = CoroutineScope(Dispatchers.Main).launch {
-                 while (true) {
-                     status.text = "Updating..."
-                     status.textFill = Color.ORANGE
-                     val curr = fetchPrice(currency)
-                     bitcoinPrice.text = curr.value.toString()
-                     dateUpdate.text = curr.time.toString()
-                     currencyLabel.text = currency.toString()
-                     status.text = "Updated."
-                     status.textFill = Color.DARKGREEN
-                     val uno = arrayOf(curr)
-                     println("${uno[0].time}, ${uno[0].value}")
-                     data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
-                     dataGraph = uno[0].time.toString()
+        /*val job = CoroutineScope(Dispatchers.Main).launch {
+            while (true) {
+                status.text = "Updating..."
+                status.textFill = Color.ORANGE
+                val curr = fetchPrice(currency)
+                bitcoinPrice.text = curr.value.toString()
+                dateUpdate.text = curr.time.toString()
+                currencyLabel.text = currency.toString()
+                status.text = "Updated."
+                status.textFill = Color.DARKGREEN
+                val uno = arrayOf(curr)
+                println("${uno[0].time}, ${uno[0].value}")
+                data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
+                dataGraph = uno[0].time.toString()
 
-                     dataChart.xValue = curr.time.hour.toString() + "." + curr.time.minute.toString()
-                     dataChart.yValue = curr.value
-                     println("${dataChart.xValue}, ${dataChart.yValue}")
-                     updateGraph(currency, dataChart.xValue, dataChart.yValue)
-                 }
-             }
+                dataChart.xValue = curr.time.hour.toString() + "." + curr.time.minute.toString()
+                dataChart.yValue = curr.value
+                println("${dataChart.xValue}, ${dataChart.yValue}")
+                updateGraph(currency, dataChart.xValue, dataChart.yValue)
+            }
+        }
 
-             job.cancel()
+        job.cancel()*/
+
 
         // runblocking variante actually work TODO
-        /* runBlocking {
-             status.text = "Updating..."
-             status.textFill = Color.ORANGE
-             val curr = fetchPrice(currency)
-             bitcoinPrice.text = curr.value.toString()
-             dateUpdate.text = curr.time.toString()
-             currencyLabel.text = currency.toString()
-             status.text = "Updated."
-             status.textFill = Color.DARKGREEN
-             val uno = arrayOf(curr)
-             println("${uno[0].time}, ${uno[0].value}")
-             data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
-             dataGraph = uno[0].time.toString()
-
-             d11.xValue = curr.time.hour.toString() + "." + curr.time.minute.toString()
-             d11.yValue = curr.value
-             println("${d11.xValue}, ${d11.yValue}")
-             updateGraph(currency, d11.xValue, d11.yValue)
-         }*/
+        runBlocking {
+            status.text = "Updating..."
+            status.textFill = Color.ORANGE
+            val curr = fetchPrice(currency)
+            bitcoinPrice.text = curr.value.toString()
+            dateUpdate.text = curr.time.format(
+                DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(ZoneId.of("Europe/Paris"))
+            )
+            currencyLabel.text = currency.toString()
+            status.text = "Updated."
+            status.textFill = Color.DARKGREEN
+            val uno = arrayOf(curr)
+            println("${uno[0].time}, ${uno[0].value}")
+            data.add(
+                arrayOf(
+                    uno[0].time.format(
+                        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withZone(ZoneId.of("Europe/Paris"))
+                    ),
+                    uno[0].value.toString(),
+                    currency.name
+                )
+            )
+            //dataChart.xValue = curr.time.hour.toString() + "." + curr.time.minute.toString()
+            dataChart.xValue = curr.time.format(DateTimeFormatter.ISO_LOCAL_TIME.withZone(ZoneId.of("Europe/Paris")))
+            dataChart.yValue = curr.value
+            println("${dataChart.xValue}, ${dataChart.yValue}")
+            updateGraph(currency, dataChart.xValue, dataChart.yValue)
+        }
     }
 
+    /***
+     * Function to w
+     */
     private fun writeToFile() {
         val fileName = "myHistory.txt"
         val mapper = jacksonObjectMapper()
