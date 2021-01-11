@@ -1,12 +1,10 @@
-import com.sun.tools.javac.Main
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import javafx.collections.FXCollections.observableArrayList
-import javafx.concurrent.Task
 import javafx.geometry.Pos
 import javafx.scene.chart.CategoryAxis
 import javafx.scene.chart.NumberAxis
 import javafx.scene.control.Button
 import javafx.scene.control.Label
-import javafx.scene.control.TableView
 import javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY
 import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
@@ -14,17 +12,17 @@ import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import javafx.stage.Stage
 import kotlinx.coroutines.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+//import kotlinx.serialization.encodeToString
+//import kotlinx.serialization.json.Json
 
 
 import tornadofx.*
-import java.io.File
-import java.util.*
 import javafx.beans.property.SimpleIntegerProperty
 
 import javafx.beans.property.IntegerProperty
+import javafx.collections.ObservableList
 import javafx.scene.chart.XYChart
+import java.io.FileWriter
 
 
 class BitcoinApp : App(MainView::class) {
@@ -38,8 +36,8 @@ class BitcoinApp : App(MainView::class) {
 class MainView : View("Bitcoin Viewer") {
 
     //private var bitcoin = Bitcoin(Currency.USD)
-   // private var bitcoinInfo: Task<Price>? = null
-   // private var price by singleAssign<Price>()
+    // private var bitcoinInfo: Task<Price>? = null
+    // private var price by singleAssign<Price>()
     private var bitcoinPrice: Label by singleAssign()
     private var currencyLabel: Label by singleAssign()
     private var dateUpdate: Label by singleAssign()
@@ -55,9 +53,7 @@ class MainView : View("Bitcoin Viewer") {
     //private var history = ArrayList<String>()
     var tblItems: TableView<String> by singleAssign()*/
 
-    private val data = observableArrayList(
-        /*arrayOf(history[0].updated, history[0].prices),
-        arrayOf("BBB", "222"),*/
+    private val data: ObservableList<Array<String>> = observableArrayList(
         arrayOf("", "", "")
     )
 
@@ -65,7 +61,7 @@ class MainView : View("Bitcoin Viewer") {
     var second: Float = 1.0F
 
 
-    var d11 = XYChart.Data("Currency", second)
+    private var dataChart = XYChart.Data("Currency", second)
 
 
     override val root = borderpane {
@@ -158,29 +154,29 @@ class MainView : View("Bitcoin Viewer") {
                         font = Font.font("Dialog", FontWeight.NORMAL, 18.0)
                     }
                     area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {
-                       /* series("USD") {
-                            //data.onChange { data[0] }
-                            //data("13.51", 12323)
-                            //data(d11.xValue, d11.yValue.value)
-                            // data(d11.xValue, d11.yValue)
+                        /* series("USD") {
+                             //data.onChange { data[0] }
+                             //data("13.51", 12323)
+                             //data(d11.xValue, d11.yValue.value)
+                             // data(d11.xValue, d11.yValue)
 
 
-                        }
-                        series("GBP") {
+                         }
+                         series("GBP") {
 
-                        }
-                        series("EUR") {
+                         }
+                         series("EUR") {
 
-                        }
-                        series("CHF") {
+                         }
+                         series("CHF") {
 
-                        }
-                        /*series("JPY") {jpn number too big for graph
+                         }
+                         /*series("JPY") {jpn number too big for graph
 
-                        }*/
-                        series("CNY") {
+                         }*/
+                         series("CNY") {
 
-                        }*/
+                         }*/
                     }
                 }
 
@@ -202,9 +198,6 @@ class MainView : View("Bitcoin Viewer") {
                         column("Currency", String::class) {
                             value { it.value[2] }
                         }
-                        /* column("Time", bitcoinProperty::time)
-                        column("Time", BitcoinInfo::updated)
-                        column("Time", Number::updated)*/
 
                         prefWidth = 667.0
                         prefHeight = 200.0
@@ -244,11 +237,14 @@ class MainView : View("Bitcoin Viewer") {
     private fun setCurrency(currency: Currency) {
         //2.1 variante
         /*MainScope().launch {
-             val one = withContext(Dispatchers.Main) { fetchPrice(currency) }
-         }*/
+            val one = withContext(Dispatchers.Main) { fetchPrice(Currency.EUR) }
+            println(one.time)
+        }*/
         //2.2 variante
-        /*    val job = CoroutineScope(Dispatchers.Main).launch {
+           val job = CoroutineScope(Dispatchers.Main).launch {
                  while (true) {
+                     status.text = "Updating..."
+                     status.textFill = Color.ORANGE
                      val curr = fetchPrice(currency)
                      bitcoinPrice.text = curr.value.toString()
                      dateUpdate.text = curr.time.toString()
@@ -258,42 +254,44 @@ class MainView : View("Bitcoin Viewer") {
                      val uno = arrayOf(curr)
                      println("${uno[0].time}, ${uno[0].value}")
                      data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
+                     dataGraph = uno[0].time.toString()
+
+                     dataChart.xValue = curr.time.hour.toString() + "." + curr.time.minute.toString()
+                     dataChart.yValue = curr.value
+                     println("${dataChart.xValue}, ${dataChart.yValue}")
+                     updateGraph(currency, dataChart.xValue, dataChart.yValue)
                  }
              }
 
-             job.cancel() */
+             job.cancel()
 
         // runblocking variante actually work TODO
-        runBlocking {
-            status.text = "Updating..."
-            status.textFill = Color.ORANGE
-            val curr = fetchPrice(currency)
-            bitcoinPrice.text = curr.value.toString()
-            dateUpdate.text = curr.time.toString()
-            currencyLabel.text = currency.toString()
-            status.text = "Updated."
-            status.textFill = Color.DARKGREEN
-            val uno = arrayOf(curr)
-            println("${uno[0].time}, ${uno[0].value}")
-            data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
-            dataGraph = uno[0].time.toString()
+        /* runBlocking {
+             status.text = "Updating..."
+             status.textFill = Color.ORANGE
+             val curr = fetchPrice(currency)
+             bitcoinPrice.text = curr.value.toString()
+             dateUpdate.text = curr.time.toString()
+             currencyLabel.text = currency.toString()
+             status.text = "Updated."
+             status.textFill = Color.DARKGREEN
+             val uno = arrayOf(curr)
+             println("${uno[0].time}, ${uno[0].value}")
+             data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
+             dataGraph = uno[0].time.toString()
 
-            d11.xValue = curr.time.hour.toString() + "." + curr.time.minute.toString()
-            d11.yValue = curr.value
-            println("${d11.xValue}, ${d11.yValue}")
-            updateGraph(currency, d11.xValue, d11.yValue)
-        }
+             d11.xValue = curr.time.hour.toString() + "." + curr.time.minute.toString()
+             d11.yValue = curr.value
+             println("${d11.xValue}, ${d11.yValue}")
+             updateGraph(currency, d11.xValue, d11.yValue)
+         }*/
     }
 
     private fun writeToFile() {
         val fileName = "myHistory.txt"
-        val myfile = File(fileName)
-
-        //val content = Json.encodeToString(data)
-        // export wrong TODO
-        val content = listOf(data).toString()
-
-        myfile.writeText(content)
+        val mapper = jacksonObjectMapper()
+        val writer = FileWriter(fileName)
+        mapper.writeValue(writer, data)
 
         status.text = "Written on file"
         status.textFill = Color.ORANGE
