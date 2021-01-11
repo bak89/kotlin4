@@ -12,7 +12,7 @@ import javax.json.Json
 
 //enum class Currency { BTC, CHF, CNY, EUR, EGP, GBP, JPY, USD }
 
-class Bitcoinccc(val price: Double, val currency: Currency, val time: Date) {
+/*class Bitcoinccc(val price: Double, val currency: Currency, val time: Date) {
     /*
     - builder
     - connect api
@@ -113,4 +113,4 @@ fun main() {
 
 //    bitcoin.deserializeBitCoin()
 
-}
+}*/

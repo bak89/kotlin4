@@ -21,11 +21,16 @@ import kotlinx.serialization.json.Json
 import tornadofx.*
 import java.io.File
 import java.util.*
+import javafx.beans.property.SimpleIntegerProperty
+
+import javafx.beans.property.IntegerProperty
+import javafx.scene.chart.XYChart
+
 
 class BitcoinApp : App(MainView::class) {
     override fun start(stage: Stage) {
-        stage.width = 550.0
-        stage.height = 950.0
+        stage.width = 650.0
+        stage.height = 1000.0
         super.start(stage)
     }
 }
@@ -33,28 +38,34 @@ class BitcoinApp : App(MainView::class) {
 class MainView : View("Bitcoin Viewer") {
 
     //private var bitcoin = Bitcoin(Currency.USD)
-    //private var bitcoinInfo: Task<BitcoinInfo>? = null
-    private var price by singleAssign<Price>()
+   // private var bitcoinInfo: Task<Price>? = null
+   // private var price by singleAssign<Price>()
     private var bitcoinPrice: Label by singleAssign()
     private var currencyLabel: Label by singleAssign()
     private var dateUpdate: Label by singleAssign()
     private var status: Label by singleAssign()
 
-    var tblItems: TableView<String> by singleAssign()
+
     var export: Button by singleAssign()
     var dataGraph: String? = ""
     var area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {}
 
-    //var bitcoinProperty = BitcoinProperty(getTime(), bitcoin.currency, getRate(bitcoin.currency))
+    /*var bitcoinProperty = BitcoinProperty(getTime(), bitcoin.currency, getRate(bitcoin.currency))
     //private var history = ArrayList<BitcoinInfo>().asObservable()
-    private var table = ArrayList<String>().asObservable()
-
+    //private var history = ArrayList<String>()
+    var tblItems: TableView<String> by singleAssign()*/
 
     private val data = observableArrayList(
-        //arrayOf(history[0].updated, history[0].prices),
-        //arrayOf("BBB", "222"),
+        /*arrayOf(history[0].updated, history[0].prices),
+        arrayOf("BBB", "222"),*/
         arrayOf("", "", "")
     )
+
+    var first: IntegerProperty = SimpleIntegerProperty(1000)
+    var second: Float = 1.0F
+
+
+    var d11 = XYChart.Data("Currency", second)
 
 
     override val root = borderpane {
@@ -128,12 +139,12 @@ class MainView : View("Bitcoin Viewer") {
                                 setCurrency(Currency.CHF)
                             }
                         }
-                        button("JPY") {
+                        /*button("JPY") {
                             prefWidth = 70.0
                             action {
                                 setCurrency(Currency.JPY)
                             }
-                        }
+                        }*/
                         button("CNY") {
                             prefWidth = 70.0
                             action {
@@ -147,22 +158,29 @@ class MainView : View("Bitcoin Viewer") {
                         font = Font.font("Dialog", FontWeight.NORMAL, 18.0)
                     }
                     area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {
-                        series("USD") {
-                            data("13.31", 26785.105)
-                            data("13:32", 26788.2)
-                            data("13:33", 26790.3)
+                       /* series("USD") {
+                            //data.onChange { data[0] }
+                            //data("13.51", 12323)
+                            //data(d11.xValue, d11.yValue.value)
+                            // data(d11.xValue, d11.yValue)
+
 
                         }
                         series("GBP") {
-                            data("13:31", 19869.469)
-                            data("13:32", 19859.469)
-                            data("13:33", 19870.6)
+
                         }
                         series("EUR") {
-                            table.forEach { item ->
-                                data(item, 2222222)
-                            }
+
                         }
+                        series("CHF") {
+
+                        }
+                        /*series("JPY") {jpn number too big for graph
+
+                        }*/
+                        series("CNY") {
+
+                        }*/
                     }
                 }
 
@@ -174,7 +192,6 @@ class MainView : View("Bitcoin Viewer") {
                     label("History") {
                         font = Font.font("Dialog", FontWeight.NORMAL, 18.0)
                     }
-                    //tblItems =tableview(data) {
                     tableview(data) {
                         column("Time", String::class) {
                             value { it.value[0] }
@@ -185,15 +202,9 @@ class MainView : View("Bitcoin Viewer") {
                         column("Currency", String::class) {
                             value { it.value[2] }
                         }
-                        /*column("Currency 3", String::class) {
-                            value { it.value }
-                        }*/
                         /* column("Time", bitcoinProperty::time)
                         column("Time", BitcoinInfo::updated)
-                        column("Time", Number::updated)
-                        column("Currency 1", Number::)
-                        column("Currency 2", Item::price)
-                          column("Currency 3", Item::taxable)*/
+                        column("Time", Number::updated)*/
 
                         prefWidth = 667.0
                         prefHeight = 200.0
@@ -212,14 +223,13 @@ class MainView : View("Bitcoin Viewer") {
                             prefWidth = 70.0
                             action {
                                 try {
-                                    //writeToFile()
+                                    writeToFile()
                                     status.text = "Successfully exported"
                                     status.textFill = Color.DARKGREEN
                                 } catch (e: Exception) {
-                                    //status.text = "Attention: ${e.message}."
-                                    //status.textFill = Color.RED
+                                    status.text = "Attention: ${e.message}."
+                                    status.textFill = Color.RED
                                 }
-                                //updateUI()
                             }
                         }
 
@@ -230,30 +240,30 @@ class MainView : View("Bitcoin Viewer") {
         }
     }
 
+    //2variante TODO
     private fun setCurrency(currency: Currency) {
-
-/*        MainScope().launch {
-            val one = withContext(Dispatchers.Main) { fetchPrice(currency) }
-        }*/
-        /* val job = CoroutineScope(Dispatchers.Main).launch {
-             while (true) {
-                 delay(5000)
-                 val curr = fetchPrice(currency)
-                 bitcoinPrice.text = curr.value.toString()
-                 dateUpdate.text = curr.time.toString()
-                 currencyLabel.text = currency.toString()
-                 status.text = "Updated."
-                 status.textFill = Color.DARKGREEN
-                 //add to array?
-                 val uno = arrayOf(curr)
-                 println("${uno[0].time}, ${uno[0].value}")
-                 data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
-
+        //2.1 variante
+        /*MainScope().launch {
+             val one = withContext(Dispatchers.Main) { fetchPrice(currency) }
+         }*/
+        //2.2 variante
+        /*    val job = CoroutineScope(Dispatchers.Main).launch {
+                 while (true) {
+                     val curr = fetchPrice(currency)
+                     bitcoinPrice.text = curr.value.toString()
+                     dateUpdate.text = curr.time.toString()
+                     currencyLabel.text = currency.toString()
+                     status.text = "Updated."
+                     status.textFill = Color.DARKGREEN
+                     val uno = arrayOf(curr)
+                     println("${uno[0].time}, ${uno[0].value}")
+                     data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
+                 }
              }
-         }
 
-         job.cancel()*/
+             job.cancel() */
 
+        // runblocking variante actually work TODO
         runBlocking {
             status.text = "Updating..."
             status.textFill = Color.ORANGE
@@ -263,19 +273,25 @@ class MainView : View("Bitcoin Viewer") {
             currencyLabel.text = currency.toString()
             status.text = "Updated."
             status.textFill = Color.DARKGREEN
-            //add to array?
             val uno = arrayOf(curr)
             println("${uno[0].time}, ${uno[0].value}")
             data.add(arrayOf(uno[0].time.toString(), uno[0].value.toString(), currency.name))
             dataGraph = uno[0].time.toString()
+
+            d11.xValue = curr.time.hour.toString() + "." + curr.time.minute.toString()
+            d11.yValue = curr.value
+            println("${d11.xValue}, ${d11.yValue}")
+            updateGraph(currency, d11.xValue, d11.yValue)
         }
     }
-/*
+
     private fun writeToFile() {
         val fileName = "myHistory.txt"
         val myfile = File(fileName)
 
-        val content = Json.encodeToString(listOf(bitcoin.getCurrent3Price(), bitcoin.getCurrent2Price()))
+        //val content = Json.encodeToString(data)
+        // export wrong TODO
+        val content = listOf(data).toString()
 
         myfile.writeText(content)
 
@@ -283,6 +299,14 @@ class MainView : View("Bitcoin Viewer") {
         status.textFill = Color.ORANGE
     }
 
+    // update problem with series TODO
+    private fun updateGraph(currency: Currency, time: String, value: Float) {
+        area.series(currency.name) {
+            data(time, value)
+        }
+    }
+//1 variante
+    /* not working anymore
     private fun setCurrency(currency: Currency) {
         bitcoinInfo?.cancel()
         bitcoin = Bitcoin(currency)
