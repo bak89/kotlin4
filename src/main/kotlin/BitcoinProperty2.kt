@@ -3,10 +3,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.*
+import kotlinx.coroutines.NonCancellable.isActive
 import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlinx.coroutines.launch
 
 enum class Currency { CHF, CNY, EUR, EGP, GBP, JPY, USD }
 
@@ -43,12 +45,37 @@ suspend fun fetchPrice(currency: Currency): Price = withContext(Dispatchers.IO) 
 }
 //return Price(data.bpi[currency]!!.rateFloat)
 
+//var scope = MainScope()
+var job = CoroutineScope(Dispatchers.Default)
+
+fun startUpdates(currency: Currency) {
+    job.launch {
+        while (true) {
+            fetchPrice(currency)
+            delay(60000)
+        }
+    }
+}
+
+fun stopUpdates() {
+    job.cancel()
+    job = CoroutineScope(Dispatchers.Default)
+}
+
 
 fun main() {
     runBlocking {
-        val eur = fetchPrice(Currency.EUR)
-        val usd = fetchPrice(Currency.USD)
-        println(eur)
-        println(usd)
+        print(startUpdates(Currency.EUR))
     }
-}*/
+
+
+
+    /* runBlocking {
+
+         val eur = fetchPrice(Currency.EUR)
+         val usd = fetchPrice(Currency.USD)
+         println(eur)
+         println(usd)
+     }*/
+}
+*/
