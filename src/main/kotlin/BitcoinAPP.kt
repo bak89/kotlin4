@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
 import kotlinx.coroutines.launch
+import java.time.ZonedDateTime
 import kotlin.concurrent.fixedRateTimer
 
 
@@ -45,8 +46,9 @@ class MainView : View("Bitcoin Viewer") {
     private val data: ObservableList<Array<String>> = observableArrayList(
         arrayOf("", "", "")
     )
-    private var price: Price by singleAssign()
+    private var price: Price = Price(ZonedDateTime.now(), 1.0F)
     private var job = CoroutineScope(Dispatchers.Default)
+    private var currency: Currency = Currency.USD
 
     /***
      * Main View
@@ -99,19 +101,23 @@ class MainView : View("Bitcoin Viewer") {
                         button("USD") {
                             prefWidth = 70.0
                             action {
+                                //job.cancel()
+                                //updateGUI2(Currency.USD)
                                 setCurrency(Currency.USD)
+                                //currency = Currency.USD
                             }
                         }
                         button("GBP") {
                             prefWidth = 70.0
                             action {
-
+                                //currency = Currency.GBP
                                 setCurrency(Currency.GBP)
                             }
                         }
                         button("EUR") {
                             prefWidth = 70.0
                             action {
+                                //currency = Currency.EUR
                                 setCurrency(Currency.EUR)
                             }
                         }
@@ -123,12 +129,6 @@ class MainView : View("Bitcoin Viewer") {
                                 setCurrency(Currency.CHF)
                             }
                         }
-                        /*button("JPY") {
-                            prefWidth = 70.0
-                            action {
-                                setCurrency(Currency.JPY)
-                            }
-                        }*/
                         button("CNY") {
                             prefWidth = 70.0
                             action {
@@ -198,39 +198,47 @@ class MainView : View("Bitcoin Viewer") {
         }
     }
 
-/*
-    private fun updateGUI2(currency: Currency) {
-        Platform.runLater(Runnable {
-            update(currency)
-        })
+    /*
+        private fun updateGUI2(currency: Currency) {
+            Platform.runLater(Runnable {
+                update(currency)
+            })
 
-    }
-
-    private fun update(currency: Currency) {
-        job.launch {
-            fixedRateTimer(
-                name = "BitCoin-timer",
-                initialDelay = 1000, period = 2000, daemon = true
-            ) { setCurrency(currency) }
         }
 
-        stopUpdates()
-    }
+        private fun update(currency: Currency) {
+            job.launch {
+                fixedRateTimer(
+                    name = "BitCoin-timer",
+                    initialDelay = 1000, period = 2000, daemon = true
+                ) { setCurrency(currency) }
+            }
+
+            //stopUpdates()
+        }
 
     private fun stopUpdates() {
         job.cancel()
         job = CoroutineScope(Dispatchers.Default)
     }*/
+    /* init {
+         fixedRateTimer(
+             name = "BitCoin-timer",
+             initialDelay = 1000, period = 10000, daemon = true
+         ) { Platform.runLater{setCurrency(currency) }}
+     }*/
 
     private fun setCurrency(currency: Currency) {
-        job.launch {
-            while (true) {
-                price = fetchPrice(currency)
-
-            }
+        status.text = "Updating..."
+        status.textFill = Color.ORANGE
+        job.async {
+            price = fetchPrice(currency)
+            Platform.runLater { updateGUI(price, currency) }
         }
-        updateGUI(price, currency)
+        //   job.cancel()
+        //   job = CoroutineScope(Dispatchers.Default)
     }
+
 
     /***
      * Function that is called to set a currency, and updates the GUI
@@ -257,8 +265,6 @@ class MainView : View("Bitcoin Viewer") {
       }*/
 
     private fun updateGUI(price: Price, currency: Currency) {
-        status.text = "Updating..."
-        status.textFill = Color.ORANGE
         bitcoinPrice.text = price.value.toString()
         dateUpdate.text = price.time.format(
             DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(ZoneId.of("Europe/Paris"))
@@ -276,22 +282,12 @@ class MainView : View("Bitcoin Viewer") {
                 currency.name
             )
         )
-        /* val uno = arrayOf(price)
-         println("${uno[0].time}, ${uno[0].value}")
-         data.add(
-             arrayOf(
-                 uno[0].time.format(
-                     DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withZone(ZoneId.of("Europe/Paris"))
-                 ),
-                 uno[0].value.toString(),
-                 currency.name
-             )
-         )*/
         dataChart.xValue =
             price.time.format(DateTimeFormatter.ISO_LOCAL_TIME.withZone(ZoneId.of("Europe/Paris")))
         dataChart.yValue = price.value
         println("${dataChart.xValue}, ${dataChart.yValue}")
-        updateGraph(currency, dataChart.xValue, dataChart.yValue)
+        area.series(currency.name){data(dataChart.xValue,dataChart.yValue)}
+        //updateGraph(currency, dataChart.xValue, dataChart.yValue)
     }
 
     /*  private fun setCurrency(currency: Currency) {
@@ -331,13 +327,14 @@ class MainView : View("Bitcoin Viewer") {
      * Function to write the Json into a File
      */
     private fun writeToFile() {
+        status.text = "Writing on file"
+        status.textFill = Color.ORANGE
         val fileName = "myHistory.txt"
         val mapper = jacksonObjectMapper()
         val writer = FileWriter(fileName)
         mapper.writeValue(writer, data)
 
-        status.text = "Written on file"
-        status.textFill = Color.ORANGE
+
     }
 
     /***

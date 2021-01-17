@@ -56,7 +56,7 @@ suspend fun fetchPrice(currency: Currency): Price = withContext(Dispatchers.IO) 
 
     return@withContext Price(data.time.updatedISO, data.bpi[currency]!!.rateFloat)
 }
-
+/*
 var job = CoroutineScope(Dispatchers.Default)
 
 fun startUpdates(currency: Currency) {
@@ -72,13 +72,13 @@ fun stopUpdates() {
     job.cancel()
     job = CoroutineScope(Dispatchers.Default)
 }
-
+*/
 fun main() {
 
     runBlocking {
         val resultOne = async { fetchPrice(Currency.GBP) }
-        val resultTwo = async { startUpdates(Currency.EUR) }
-        println(resultTwo.await())
+       // val resultTwo = async { startUpdates(Currency.EUR) }
+      //  println(resultTwo.await())
     }
     //stopUpdates()
 }
