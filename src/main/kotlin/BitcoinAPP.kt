@@ -20,11 +20,7 @@ import java.io.FileWriter
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.*
-import kotlinx.coroutines.launch
 import java.time.ZonedDateTime
-import kotlin.concurrent.fixedRateTimer
-import javafx.collections.FXCollections
 
 
 class BitcoinApp : App(MainView::class) {
@@ -35,30 +31,26 @@ class BitcoinApp : App(MainView::class) {
     }
 }
 
+/**
+ * Main View class
+ */
 class MainView : View("Bitcoin Viewer") {
     private var bitcoinPrice: Label by singleAssign()
     private var currencyLabel: Label by singleAssign()
     private var dateUpdate: Label by singleAssign()
     private var status: Label by singleAssign()
     private var export: Button by singleAssign()
-
-    //private var valueChart: Float = 1.0F
     private var dataChart = XYChart.Data("Currency", 1.0F)
     private var area = areachart("Bitcoin History", CategoryAxis(), NumberAxis()) {}
     private val data: ObservableList<Array<String>> = observableArrayList(
         arrayOf("", "", "")
     )
 
-    var seriesList = observableArrayList<XYChart.Series<*, *>>()
-
     private var price: Price = Price(ZonedDateTime.now(), 1.0F)
     private var job = CoroutineScope(Dispatchers.Default)
-    //private var currency: Currency = Currency.USD
 
 
-    private var data1 = FXCollections.observableArrayList<Price>()
-
-    /***
+    /**
      * Main View
      */
     override val root = borderpane {
@@ -109,23 +101,21 @@ class MainView : View("Bitcoin Viewer") {
                         button("USD") {
                             prefWidth = 70.0
                             action {
-                                //job.cancel()
-                                //updateGUI2(Currency.USD)
+                                stopUpdates()
                                 setCurrency(Currency.USD)
-                                //currency = Currency.USD
                             }
                         }
                         button("GBP") {
                             prefWidth = 70.0
                             action {
-                                //currency = Currency.GBP
+                                stopUpdates()
                                 setCurrency(Currency.GBP)
                             }
                         }
                         button("EUR") {
                             prefWidth = 70.0
                             action {
-                                //currency = Currency.EUR
+                                stopUpdates()
                                 setCurrency(Currency.EUR)
                             }
                         }
@@ -134,12 +124,14 @@ class MainView : View("Bitcoin Viewer") {
                         button("CHF") {
                             prefWidth = 70.0
                             action {
+                                stopUpdates()
                                 setCurrency(Currency.CHF)
                             }
                         }
                         button("CNY") {
                             prefWidth = 70.0
                             action {
+                                stopUpdates()
                                 setCurrency(Currency.CNY)
                             }
                         }
@@ -153,7 +145,6 @@ class MainView : View("Bitcoin Viewer") {
 
                     }
                 }
-
                 separator {}
             }
             bottom {
@@ -190,6 +181,7 @@ class MainView : View("Bitcoin Viewer") {
                             prefWidth = 70.0
                             action {
                                 try {
+                                    stopUpdates()
                                     writeToFile()
                                     status.text = "Successfully exported"
                                     status.textFill = Color.DARKGREEN
@@ -207,94 +199,32 @@ class MainView : View("Bitcoin Viewer") {
         }
     }
 
-    /*
-        private fun updateGUI2(currency: Currency) {
-            Platform.runLater(Runnable {
-                update(currency)
-            })
-
-        }
-
-        private fun update(currency: Currency) {
-            job.launch {
-                fixedRateTimer(
-                    name = "BitCoin-timer",
-                    initialDelay = 1000, period = 2000, daemon = true
-                ) { setCurrency(currency) }
-            }
-
-            //stopUpdates()
-        }
-
+    /**
+     * Delete the active job and reset the Coroutine scope to Default
+     */
     private fun stopUpdates() {
         job.cancel()
         job = CoroutineScope(Dispatchers.Default)
-    }*/
+    }
 
-    /***
-     * init timer
+    /**
+     * Function to fetch data from api every 60 seconds
      */
-    /* init {
-         fixedRateTimer(
-             name = "BitCoin-timer",
-             initialDelay = 1000, period = 10000, daemon = true
-         ) { Platform.runLater{setCurrency(currency) }}
-     }*/
-    /***
-     * VAR1
-     */
-
     private fun setCurrency(currency: Currency) {
         status.text = "Updating..."
         status.textFill = Color.ORANGE
         job.async {
-            price = fetchPrice(currency)
-            Platform.runLater { updateGUI(price, currency) }
+            while (true) {
+                price = fetchPrice(currency)
+                Platform.runLater { addData(price, currency) }
+                delay(2000)
+            }
         }
-        //   job.cancel()
-        //   job = CoroutineScope(Dispatchers.Default)
     }
 
-    private fun updateGUI(price: Price, currency: Currency) {
-        bitcoinPrice.text = price.value.toString()
-        dateUpdate.text = price.time.format(
-            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(ZoneId.of("Europe/Paris"))
-        )
-        currencyLabel.text = currency.toString()
-        status.text = "Updated."
-        status.textFill = Color.DARKGREEN
-        println("${price.time}, ${price.value}")
-        data.add(
-            arrayOf(
-                price.time.format(
-                    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withZone(ZoneId.of("Europe/Paris"))
-                ),
-                price.value.toString(),
-                currency.name
-            )
-        )
-        dataChart.xValue =
-            price.time.format(DateTimeFormatter.ISO_LOCAL_TIME.withZone(ZoneId.of("Europe/Paris")))
-        dataChart.yValue = price.value
-        println("${dataChart.xValue}, ${dataChart.yValue}")
-        area.series(currency.name) { data(dataChart.xValue, dataChart.yValue) }
-        //updateGraph(currency, dataChart.xValue, dataChart.yValue)
-    }
-
-
-    /***
-     * VAR2 Function that is called to set a currency, and updates the GUI
+    /**
+     *    Function that is called to add data to array
      */
-    /*
-    private fun setCurrency(currency: Currency) {
-        status.text = "Updating..."
-        status.textFill = Color.ORANGE
-        job.async {
-            price = fetchPrice(currency)
-            addData(price, currency)
-        }
-    }
-
     private fun addData(price: Price, currency: Currency) {
         data.add(
             arrayOf(
@@ -308,66 +238,26 @@ class MainView : View("Bitcoin Viewer") {
         dataChart.xValue = price.time.format(DateTimeFormatter.ISO_LOCAL_TIME.withZone(ZoneId.of("Europe/Paris")))
         dataChart.yValue = price.value
         println("${dataChart.xValue}, ${dataChart.yValue}")
+        updateGUI(price, currency)
     }
 
-
-    //DATA ON CHANGE?
+    /**
+     *   Function that is called to updates the GUI
+     */
     private fun updateGUI(price: Price, currency: Currency) {
-
-       // data.onChange {
-            bitcoinPrice.text = price.value.toString()
-            dateUpdate.text = price.time.format(
-                DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(ZoneId.of("Europe/Paris"))
-            )
-            currencyLabel.text = currency.toString()
-            status.text = "Updated."
-            status.textFill = Color.DARKGREEN
-       // }
-
-
+        bitcoinPrice.text = price.value.toString()
+        dateUpdate.text = price.time.format(
+            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(ZoneId.of("Europe/Paris"))
+        )
+        currencyLabel.text = currency.toString()
+        status.text = "Updated."
+        status.textFill = Color.DARKGREEN
         println("${price.time}, ${price.value}")
         area.series(currency.name) { data(dataChart.xValue, dataChart.yValue) }
         //updateGraph(currency, dataChart.xValue, dataChart.yValue)
     }
-*/
 
-    /***
-     * Originale
-     */
-    /*  private fun setCurrency(currency: Currency) {
-          runBlocking {
-              status.text = "Updating..."
-              status.textFill = Color.ORANGE
-              val curr = fetchPrice(currency)
-              bitcoinPrice.text = curr.value.toString()
-              dateUpdate.text = curr.time.format(
-                  DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(ZoneId.of("Europe/Paris"))
-              )
-              currencyLabel.text = currency.toString()
-              status.text = "Updated."
-              status.textFill = Color.DARKGREEN
-              val uno = arrayOf(curr)
-              println("${uno[0].time}, ${uno[0].value}")
-              data.add(
-                  arrayOf(
-                      uno[0].time.format(
-                          DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withZone(ZoneId.of("Europe/Paris"))
-                      ),
-                      uno[0].value.toString(),
-                      currency.name
-                  )
-              )
-              dataChart.xValue =
-                  curr.time.format(DateTimeFormatter.ISO_LOCAL_TIME.withZone(ZoneId.of("Europe/Paris")))
-              dataChart.yValue = curr.value
-              println("${dataChart.xValue}, ${dataChart.yValue}")
-              updateGraph(currency, dataChart.xValue, dataChart.yValue)
-          }
-
-      }*/
-
-
-    /***
+    /**
      * Function to write the Json into a File
      */
     private fun writeToFile() {
@@ -377,20 +267,12 @@ class MainView : View("Bitcoin Viewer") {
         val mapper = jacksonObjectMapper()
         val writer = FileWriter(fileName)
         mapper.writeValue(writer, data)
-
-
-    }
-
-    /***
-     * Update the Graph
-     */
-    private fun updateGraph(currency: Currency, time: String, value: Float) {
-        area.series(currency.name) {
-            data(time, value)
-        }
     }
 }
 
+/**
+ * Main function
+ */
 fun main(args: Array<String>) {
     launch<BitcoinApp>(args)
 }
